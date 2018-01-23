@@ -39,6 +39,7 @@ import (
 	client "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset/typed/apiextensions/internalversion"
 	informers "k8s.io/apiextensions-apiserver/pkg/client/informers/internalversion/apiextensions/internalversion"
 	listers "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/internalversion"
+	"k8s.io/apiextensions-apiserver/pkg/utils"
 )
 
 // CRDFinalizer is a controller that finalizes the CRD by deleting all the CRs associated with it.
@@ -102,14 +103,14 @@ func (c *CRDFinalizer) sync(key string) error {
 	}
 
 	// no work to do
-	if cachedCRD.DeletionTimestamp.IsZero() || !apiextensions.CRDHasFinalizer(cachedCRD, apiextensions.CustomResourceCleanupFinalizer) {
+	if cachedCRD.DeletionTimestamp.IsZero() || !utils.CRDHasFinalizer(cachedCRD, apiextensions.CustomResourceCleanupFinalizer) {
 		return nil
 	}
 
 	crd := cachedCRD.DeepCopy()
 
 	// update the status condition.  This cleanup could take a while.
-	apiextensions.SetCRDCondition(crd, apiextensions.CustomResourceDefinitionCondition{
+	utils.SetCRDCondition(crd, apiextensions.CustomResourceDefinitionCondition{
 		Type:    apiextensions.Terminating,
 		Status:  apiextensions.ConditionTrue,
 		Reason:  "InstanceDeletionInProgress",
@@ -122,9 +123,9 @@ func (c *CRDFinalizer) sync(key string) error {
 
 	// Now we can start deleting items.  We should use the REST API to ensure that all normal admission runs.
 	// Since we control the endpoints, we know that delete collection works. No need to delete if not established.
-	if apiextensions.IsCRDConditionTrue(crd, apiextensions.Established) {
+	if utils.IsCRDConditionTrue(crd, apiextensions.Established) {
 		cond, deleteErr := c.deleteInstances(crd)
-		apiextensions.SetCRDCondition(crd, cond)
+		utils.SetCRDCondition(crd, cond)
 		if deleteErr != nil {
 			crd, err = c.crdClient.CustomResourceDefinitions().UpdateStatus(crd)
 			if err != nil {
@@ -133,7 +134,7 @@ func (c *CRDFinalizer) sync(key string) error {
 			return deleteErr
 		}
 	} else {
-		apiextensions.SetCRDCondition(crd, apiextensions.CustomResourceDefinitionCondition{
+		utils.SetCRDCondition(crd, apiextensions.CustomResourceDefinitionCondition{
 			Type:    apiextensions.Terminating,
 			Status:  apiextensions.ConditionFalse,
 			Reason:  "NeverEstablished",
@@ -141,7 +142,7 @@ func (c *CRDFinalizer) sync(key string) error {
 		})
 	}
 
-	apiextensions.CRDRemoveFinalizer(crd, apiextensions.CustomResourceCleanupFinalizer)
+	utils.CRDRemoveFinalizer(crd, apiextensions.CustomResourceCleanupFinalizer)
 	crd, err = c.crdClient.CustomResourceDefinitions().UpdateStatus(crd)
 	if err != nil {
 		return err
@@ -291,7 +292,7 @@ func (c *CRDFinalizer) enqueue(obj *apiextensions.CustomResourceDefinition) {
 func (c *CRDFinalizer) addCustomResourceDefinition(obj interface{}) {
 	castObj := obj.(*apiextensions.CustomResourceDefinition)
 	// only queue deleted things
-	if !castObj.DeletionTimestamp.IsZero() && apiextensions.CRDHasFinalizer(castObj, apiextensions.CustomResourceCleanupFinalizer) {
+	if !castObj.DeletionTimestamp.IsZero() && utils.CRDHasFinalizer(castObj, apiextensions.CustomResourceCleanupFinalizer) {
 		c.enqueue(castObj)
 	}
 }
@@ -300,7 +301,7 @@ func (c *CRDFinalizer) updateCustomResourceDefinition(oldObj, newObj interface{}
 	oldCRD := oldObj.(*apiextensions.CustomResourceDefinition)
 	newCRD := newObj.(*apiextensions.CustomResourceDefinition)
 	// only queue deleted things that haven't been finalized by us
-	if newCRD.DeletionTimestamp.IsZero() || !apiextensions.CRDHasFinalizer(newCRD, apiextensions.CustomResourceCleanupFinalizer) {
+	if newCRD.DeletionTimestamp.IsZero() || !utils.CRDHasFinalizer(newCRD, apiextensions.CustomResourceCleanupFinalizer) {
 		return
 	}
 
@@ -318,8 +319,8 @@ func (c *CRDFinalizer) updateCustomResourceDefinition(oldObj, newObj interface{}
 	newCopy := newCRD.DeepCopy()
 	oldCopy.ResourceVersion = ""
 	newCopy.ResourceVersion = ""
-	apiextensions.RemoveCRDCondition(oldCopy, apiextensions.Terminating)
-	apiextensions.RemoveCRDCondition(newCopy, apiextensions.Terminating)
+	utils.RemoveCRDCondition(oldCopy, apiextensions.Terminating)
+	utils.RemoveCRDCondition(newCopy, apiextensions.Terminating)
 
 	if !reflect.DeepEqual(oldCopy, newCopy) {
 		c.enqueue(newCRD)

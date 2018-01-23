@@ -37,6 +37,7 @@ import (
 	client "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset/typed/apiextensions/internalversion"
 	informers "k8s.io/apiextensions-apiserver/pkg/client/informers/internalversion/apiextensions/internalversion"
 	listers "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/internalversion"
+	"k8s.io/apiextensions-apiserver/pkg/utils"
 )
 
 // This controller is reserving names. To avoid conflicts, be sure to run only one instance of the worker at a time.
@@ -196,7 +197,7 @@ func (c *NamingConditionController) calculateNamesAndConditions(in *apiextension
 		Reason:  "NotAccepted",
 		Message: "not all names are accepted",
 	}
-	if old := apiextensions.FindCRDCondition(in, apiextensions.Established); old != nil {
+	if old := utils.RemoveCRDCondition(in, apiextensions.Established); old != nil {
 		establishedCondition = *old
 	}
 	if establishedCondition.Status != apiextensions.ConditionTrue && namesAcceptedCondition.Status == apiextensions.ConditionTrue {
@@ -240,15 +241,15 @@ func (c *NamingConditionController) sync(key string) error {
 
 	// nothing to do if accepted names and NamesAccepted condition didn't change
 	if reflect.DeepEqual(inCustomResourceDefinition.Status.AcceptedNames, acceptedNames) &&
-		apiextensions.IsCRDConditionEquivalent(&namingCondition, apiextensions.FindCRDCondition(inCustomResourceDefinition, apiextensions.NamesAccepted)) &&
-		apiextensions.IsCRDConditionEquivalent(&establishedCondition, apiextensions.FindCRDCondition(inCustomResourceDefinition, apiextensions.Established)) {
+		utils.IsCRDConditionEquivalent(&namingCondition, utils.RemoveCRDCondition(inCustomResourceDefinition, apiextensions.NamesAccepted)) &&
+		utils.IsCRDConditionEquivalent(&establishedCondition, utils.RemoveCRDCondition(inCustomResourceDefinition, apiextensions.Established)) {
 		return nil
 	}
 
 	crd := inCustomResourceDefinition.DeepCopy()
 	crd.Status.AcceptedNames = acceptedNames
-	apiextensions.SetCRDCondition(crd, namingCondition)
-	apiextensions.SetCRDCondition(crd, establishedCondition)
+	utils.SetCRDCondition(crd, namingCondition)
+	utils.SetCRDCondition(crd, establishedCondition)
 
 	updatedObj, err := c.crdClient.CustomResourceDefinitions().UpdateStatus(crd)
 	if err != nil {

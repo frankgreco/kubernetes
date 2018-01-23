@@ -54,6 +54,7 @@ import (
 	listers "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/internalversion"
 	"k8s.io/apiextensions-apiserver/pkg/controller/finalizer"
 	"k8s.io/apiextensions-apiserver/pkg/registry/customresource"
+	"k8s.io/apiextensions-apiserver/pkg/utils"
 )
 
 // crdHandler serves the `/apis` endpoint.
@@ -166,7 +167,7 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.delegate.ServeHTTP(w, req)
 		return
 	}
-	if !apiextensions.IsCRDConditionTrue(crd, apiextensions.Established) {
+	if !utils.IsCRDConditionTrue(crd, apiextensions.Established) {
 		r.delegate.ServeHTTP(w, req)
 		return
 	}
@@ -175,7 +176,7 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	terminating := apiextensions.IsCRDConditionTrue(crd, apiextensions.Terminating)
+	terminating := utils.IsCRDConditionTrue(crd, apiextensions.Terminating)
 
 	crdInfo, err := r.getOrCreateServingInfoFor(crd)
 	if err != nil {

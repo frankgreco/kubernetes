@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apiextensions
+package utils
 
 import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 )
 
 // SetCRDCondition sets the status condition.  It either overwrites the existing one or
 // creates a new one
-func SetCRDCondition(crd *CustomResourceDefinition, newCondition CustomResourceDefinitionCondition) {
+func SetCRDCondition(crd *apiextensions.CustomResourceDefinition, newCondition apiextensions.CustomResourceDefinitionCondition) {
 	existingCondition := FindCRDCondition(crd, newCondition.Type)
 	if existingCondition == nil {
 		newCondition.LastTransitionTime = metav1.NewTime(time.Now())
@@ -42,8 +44,8 @@ func SetCRDCondition(crd *CustomResourceDefinition, newCondition CustomResourceD
 }
 
 // RemoveCRDCondition removes the status condition.
-func RemoveCRDCondition(crd *CustomResourceDefinition, conditionType CustomResourceDefinitionConditionType) {
-	newConditions := []CustomResourceDefinitionCondition{}
+func RemoveCRDCondition(crd *apiextensions.CustomResourceDefinition, conditionType apiextensions.CustomResourceDefinitionConditionType) {
+	newConditions := []apiextensions.CustomResourceDefinitionCondition{}
 	for _, condition := range crd.Status.Conditions {
 		if condition.Type != conditionType {
 			newConditions = append(newConditions, condition)
@@ -53,7 +55,7 @@ func RemoveCRDCondition(crd *CustomResourceDefinition, conditionType CustomResou
 }
 
 // FindCRDCondition returns the condition you're looking for or nil
-func FindCRDCondition(crd *CustomResourceDefinition, conditionType CustomResourceDefinitionConditionType) *CustomResourceDefinitionCondition {
+func FindCRDCondition(crd *apiextensions.CustomResourceDefinition, conditionType apiextensions.CustomResourceDefinitionConditionType) *apiextensions.CustomResourceDefinitionCondition {
 	for i := range crd.Status.Conditions {
 		if crd.Status.Conditions[i].Type == conditionType {
 			return &crd.Status.Conditions[i]
@@ -64,17 +66,17 @@ func FindCRDCondition(crd *CustomResourceDefinition, conditionType CustomResourc
 }
 
 // IsCRDConditionTrue indicates if the condition is present and strictly true
-func IsCRDConditionTrue(crd *CustomResourceDefinition, conditionType CustomResourceDefinitionConditionType) bool {
-	return IsCRDConditionPresentAndEqual(crd, conditionType, ConditionTrue)
+func IsCRDConditionTrue(crd *apiextensions.CustomResourceDefinition, conditionType apiextensions.CustomResourceDefinitionConditionType) bool {
+	return IsCRDConditionPresentAndEqual(crd, conditionType, apiextensions.ConditionTrue)
 }
 
 // IsCRDConditionFalse indicates if the condition is present and false true
-func IsCRDConditionFalse(crd *CustomResourceDefinition, conditionType CustomResourceDefinitionConditionType) bool {
-	return IsCRDConditionPresentAndEqual(crd, conditionType, ConditionFalse)
+func IsCRDConditionFalse(crd *apiextensions.CustomResourceDefinition, conditionType apiextensions.CustomResourceDefinitionConditionType) bool {
+	return IsCRDConditionPresentAndEqual(crd, conditionType, apiextensions.ConditionFalse)
 }
 
 // IsCRDConditionPresentAndEqual indicates if the condition is present and equal to the arg
-func IsCRDConditionPresentAndEqual(crd *CustomResourceDefinition, conditionType CustomResourceDefinitionConditionType, status ConditionStatus) bool {
+func IsCRDConditionPresentAndEqual(crd *apiextensions.CustomResourceDefinition, conditionType apiextensions.CustomResourceDefinitionConditionType, status apiextensions.ConditionStatus) bool {
 	for _, condition := range crd.Status.Conditions {
 		if condition.Type == conditionType {
 			return condition.Status == status
@@ -84,7 +86,7 @@ func IsCRDConditionPresentAndEqual(crd *CustomResourceDefinition, conditionType 
 }
 
 // IsCRDConditionEquivalent returns true if the lhs and rhs are equivalent except for times
-func IsCRDConditionEquivalent(lhs, rhs *CustomResourceDefinitionCondition) bool {
+func IsCRDConditionEquivalent(lhs, rhs *apiextensions.CustomResourceDefinitionCondition) bool {
 	if lhs == nil && rhs == nil {
 		return true
 	}
@@ -96,7 +98,7 @@ func IsCRDConditionEquivalent(lhs, rhs *CustomResourceDefinitionCondition) bool 
 }
 
 // CRDHasFinalizer returns true if the finalizer is in the list
-func CRDHasFinalizer(crd *CustomResourceDefinition, needle string) bool {
+func CRDHasFinalizer(crd *apiextensions.CustomResourceDefinition, needle string) bool {
 	for _, finalizer := range crd.Finalizers {
 		if finalizer == needle {
 			return true
@@ -107,7 +109,7 @@ func CRDHasFinalizer(crd *CustomResourceDefinition, needle string) bool {
 }
 
 // CRDRemoveFinalizer removes the finalizer if present
-func CRDRemoveFinalizer(crd *CustomResourceDefinition, needle string) {
+func CRDRemoveFinalizer(crd *apiextensions.CustomResourceDefinition, needle string) {
 	newFinalizers := []string{}
 	for _, finalizer := range crd.Finalizers {
 		if finalizer != needle {

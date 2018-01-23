@@ -24,6 +24,7 @@ import (
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	listers "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/internalversion"
+	"k8s.io/apiextensions-apiserver/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -327,10 +328,10 @@ func TestSync(t *testing.T) {
 		if e, a := tc.expectedNames, actualNames; !reflect.DeepEqual(e, a) {
 			t.Errorf("%v expected %v, got %#v", tc.name, e, a)
 		}
-		if e, a := tc.expectedNameConflictCondition, actualNameConflictCondition; !apiextensions.IsCRDConditionEquivalent(&e, &a) {
+		if e, a := tc.expectedNameConflictCondition, actualNameConflictCondition; !utils.IsCRDConditionEquivalent(&e, &a) {
 			t.Errorf("%v expected %v, got %v", tc.name, e, a)
 		}
-		if e, a := tc.expectedEstablishedCondition, actualEstablishedCondition; !apiextensions.IsCRDConditionEquivalent(&e, &a) {
+		if e, a := tc.expectedEstablishedCondition, actualEstablishedCondition; !utils.IsCRDConditionEquivalent(&e, &a) {
 			t.Errorf("%v expected %v, got %v", tc.name, e, a)
 		}
 	}

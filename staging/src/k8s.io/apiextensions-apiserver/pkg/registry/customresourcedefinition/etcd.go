@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	"k8s.io/apiextensions-apiserver/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -117,11 +118,11 @@ func (r *REST) Delete(ctx genericapirequest.Context, name string, options *metav
 					existingCRD.DeletionTimestamp = &now
 				}
 
-				if !apiextensions.CRDHasFinalizer(existingCRD, apiextensions.CustomResourceCleanupFinalizer) {
+				if !utils.CRDHasFinalizer(existingCRD, apiextensions.CustomResourceCleanupFinalizer) {
 					existingCRD.Finalizers = append(existingCRD.Finalizers, apiextensions.CustomResourceCleanupFinalizer)
 				}
 				// update the status condition too
-				apiextensions.SetCRDCondition(existingCRD, apiextensions.CustomResourceDefinitionCondition{
+				utils.SetCRDCondition(existingCRD, apiextensions.CustomResourceDefinitionCondition{
 					Type:    apiextensions.Terminating,
 					Status:  apiextensions.ConditionTrue,
 					Reason:  "InstanceDeletionPending",

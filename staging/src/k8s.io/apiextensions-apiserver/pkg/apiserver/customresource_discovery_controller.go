@@ -35,6 +35,7 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	informers "k8s.io/apiextensions-apiserver/pkg/client/informers/internalversion/apiextensions/internalversion"
 	listers "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/internalversion"
+	"k8s.io/apiextensions-apiserver/pkg/utils"
 )
 
 type DiscoveryController struct {
@@ -85,7 +86,7 @@ func (c *DiscoveryController) sync(version schema.GroupVersion) error {
 	foundVersion := false
 	foundGroup := false
 	for _, crd := range crds {
-		if !apiextensions.IsCRDConditionTrue(crd, apiextensions.Established) {
+		if !utils.IsCRDConditionTrue(crd, apiextensions.Established) {
 			continue
 		}
 
@@ -105,7 +106,7 @@ func (c *DiscoveryController) sync(version schema.GroupVersion) error {
 
 		verbs := metav1.Verbs([]string{"delete", "deletecollection", "get", "list", "patch", "create", "update", "watch"})
 		// if we're terminating we don't allow some verbs
-		if apiextensions.IsCRDConditionTrue(crd, apiextensions.Terminating) {
+		if utils.IsCRDConditionTrue(crd, apiextensions.Terminating) {
 			verbs = metav1.Verbs([]string{"delete", "deletecollection", "get", "list", "watch"})
 		}
 

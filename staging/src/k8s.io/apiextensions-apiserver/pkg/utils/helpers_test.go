@@ -14,26 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apiextensions
+package utils
 
 import (
 	"reflect"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 )
 
 func TestCRDHasFinalizer(t *testing.T) {
 	tests := []struct {
 		name             string
-		crd              *CustomResourceDefinition
+		crd              *apiextensions.CustomResourceDefinition
 		finalizerToCheck string
 
 		expected bool
 	}{
 		{
 			name: "missing",
-			crd: &CustomResourceDefinition{
+			crd: &apiextensions.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{"not-it"}},
 			},
 			finalizerToCheck: "it",
@@ -41,7 +43,7 @@ func TestCRDHasFinalizer(t *testing.T) {
 		},
 		{
 			name: "present",
-			crd: &CustomResourceDefinition{
+			crd: &apiextensions.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{"not-it", "it"}},
 			},
 			finalizerToCheck: "it",
@@ -59,14 +61,14 @@ func TestCRDHasFinalizer(t *testing.T) {
 func TestCRDRemoveFinalizer(t *testing.T) {
 	tests := []struct {
 		name             string
-		crd              *CustomResourceDefinition
+		crd              *apiextensions.CustomResourceDefinition
 		finalizerToCheck string
 
 		expected []string
 	}{
 		{
 			name: "missing",
-			crd: &CustomResourceDefinition{
+			crd: &apiextensions.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{"not-it"}},
 			},
 			finalizerToCheck: "it",
@@ -74,7 +76,7 @@ func TestCRDRemoveFinalizer(t *testing.T) {
 		},
 		{
 			name: "present",
-			crd: &CustomResourceDefinition{
+			crd: &apiextensions.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{Finalizers: []string{"not-it", "it"}},
 			},
 			finalizerToCheck: "it",
